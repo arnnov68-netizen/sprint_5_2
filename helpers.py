@@ -1,19 +1,95 @@
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
 import random
 import string
 
-def generate_random_email():
-    """Генерирует email вида: имя_фамилия_когорта_3цифры@домен"""
-    name = "test"
-    surname = "user"
-    cohort = "5"  # Укажи номер своей когорты
-    digits = ''.join(random.choices(string.digits, k=3))
-    domain = "yandex.ru"
-    return f"{name}_{surname}_{cohort}_{digits}@{domain}"
 
-def generate_random_password(length=6):
-    """Генерирует пароль заданной длины (по умолчанию 6 символов)"""
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+def wait_for_element(browser, locator, timeout=10):
+    """
+    Ожидание появления элемента на странице
+    """
+    try:
+        return WebDriverWait(browser, timeout).until(
+            EC.presence_of_element_located(locator)
+        )
+    except TimeoutException:
+        browser.save_screenshot("element_not_found.png")
+        raise
+
+
+def wait_for_clickable(browser, locator, timeout=10):
+    """
+    Ожидание кликабельности элемента
+    """
+    try:
+        return WebDriverWait(browser, timeout).until(
+            EC.element_to_be_clickable(locator)
+        )
+    except TimeoutException:
+        browser.save_screenshot("element_not_clickable.png")
+        raise
+
+
+def wait_for_url(browser, url, timeout=10):
+    """
+    Ожидание определенного URL
+    """
+    return WebDriverWait(browser, timeout).until(
+        EC.url_to_be(url)
+    )
+
+
+def find_input_by_placeholder(browser, placeholder_text, timeout=10):
+    """Поиск поля ввода по placeholder"""
+    return WebDriverWait(browser, timeout).until(
+        EC.presence_of_element_located((By.XPATH, f"//input[@placeholder='{placeholder_text}']"))
+    )
+
+
+def find_input_by_name(browser, name_attribute, timeout=10):
+    """Поиск поля ввода по атрибуту name"""
+    return WebDriverWait(browser, timeout).until(
+        EC.presence_of_element_located((By.XPATH, f"//input[@name='{name_attribute}']"))
+    )
+
+
+def find_input_by_type(browser, input_type, timeout=10):
+    """Поиск поля ввода по типу"""
+    return WebDriverWait(browser, timeout).until(
+        EC.presence_of_element_located((By.XPATH, f"//input[@type='{input_type}']"))
+    )
+
+
+def find_all_inputs(browser, timeout=10):
+    """Поиск всех полей ввода на странице"""
+    try:
+        return WebDriverWait(browser, timeout).until(
+            EC.presence_of_all_elements_located((By.TAG_NAME, "input"))
+        )
+    except TimeoutException:
+        return browser.find_elements(By.TAG_NAME, "input")
+
+
+def generate_user_data():
+    """
+    Генерация данных для нового пользователя
+    """
+
+    def generate_random_string(length=8):
+        letters = string.ascii_lowercase
+        return ''.join(random.choice(letters) for _ in range(length))
+
+    return {
+        'name': generate_random_string(6),
+        'email': f"{generate_random_string(8)}@testmail.com",
+        'password': generate_random_string(10)
+    }
+
 
 def generate_invalid_password():
-    """Генерирует пароль короче 6 символов"""
-    return ''.join(random.choices(string.ascii_letters, k=5))
+    """
+    Генерация неверного пароля для тестов
+    """
+    return "wrong_password_123"
