@@ -1,38 +1,71 @@
 from selenium.webdriver.common.by import By
 
-# URL
-BASE_URL = "https://stellarburgers.education-services.ru"
 
-# Главная страница
-LOGIN_ACCOUNT_BUTTON_MAIN = (By.XPATH, "//button[text()='Войти в аккаунт']")  # Кнопка «Войти в аккаунт» на главной
-PERSONAL_ACCOUNT_BUTTON = (By.XPATH, "//a[@href='/account']")  # Кнопка «Личный кабинет»
+class MainPageLocators:
+    """Локаторы для главной страницы"""
+    CONSTRUCTOR_TITLE = (By.XPATH, "//h1[contains(text(), 'Соберите бургер')]")
 
-# Регистрация
-REGISTER_LINK = (By.XPATH, "//a[text()='Зарегистрироваться']")  # Ссылка «Зарегистрироваться»
-REGISTER_HEADER = (By.XPATH, "//h2[text()='Регистрация']")  # Заголовок страницы регистрации
-NAME_INPUT = (By.XPATH, "//label[text()='Имя']/parent::div//input")  # Поле ввода имени
-EMAIL_INPUT = (By.XPATH, "//label[text()='Email']/parent::div//input")  # Поле ввода email
-PASSWORD_INPUT = (By.XPATH, "//label[text()='Пароль']/parent::div//input")  # Поле ввода пароля
-REGISTER_BUTTON = (By.XPATH, "//button[text()='Зарегистрироваться']")  # Кнопка «Зарегистрироваться»
-PASSWORD_ERROR = (By.XPATH, "//p[contains(text(), 'Некорректный пароль')]")  # Ошибка некорректного пароля
+    # Вкладки
+    BUNS_TAB = (By.XPATH, "//div[contains(@class, 'tab')][.//span[text()='Булки']]")
+    SAUCES_TAB = (By.XPATH, "//div[contains(@class, 'tab')][.//span[text()='Соусы']]")
+    FILLINGS_TAB = (By.XPATH, "//div[contains(@class, 'tab')][.//span[text()='Начинки']]")
+    ACTIVE_TAB = (By.XPATH, "//div[contains(@class, 'tab_tab_type_current')]")
 
-# Вход
-LOGIN_HEADER = (By.XPATH, "//h2[text()='Вход']")  # Заголовок страницы входа
-LOGIN_EMAIL_INPUT = (By.XPATH, "//label[text()='Email']/parent::div//input")  # Поле email на странице входа
-LOGIN_PASSWORD_INPUT = (By.XPATH, "//label[text()='Пароль']/parent::div//input")  # Поле пароля на странице входа
-LOGIN_BUTTON = (By.XPATH, "//button[text()='Войти']")  # Кнопка «Войти»
-LOGIN_FROM_REGISTER_LINK = (By.XPATH, "//a[text()='Войти']")  # Ссылка «Войти» на странице регистрации
-FORGOT_PASSWORD_LINK = (By.XPATH, "//a[text()='Восстановить пароль']")  # Ссылка «Восстановить пароль»
-LOGIN_FROM_FORGOT_PASSWORD_LINK = (By.XPATH, "//a[text()='Войти']")  # Ссылка «Войти» на странице восстановления пароля
+    # Кнопки
+    PLACE_ORDER_BUTTON = (By.XPATH, "//button[contains(text(), 'Оформить заказ')]")
+    LOGIN_BUTTON_MAIN = (By.XPATH, "//button[contains(text(), 'Войти в аккаунт')]")
+    PERSONAL_ACCOUNT_BUTTON = (By.XPATH, "//a[contains(@href, '/account')]")
 
-# Личный кабинет
-ACCOUNT_HEADER = (By.XPATH, "//h2[text()='Личный кабинет']")  # Заголовок личного кабинета
-LOGOUT_BUTTON = (By.XPATH, "//button[text()='Выйти']")  # Кнопка «Выйти»
+    # Секции
+    BUNS_SECTION = (By.XPATH, "//h2[contains(text(), 'Булки')]")
+    SAUCES_SECTION = (By.XPATH, "//h2[contains(text(), 'Соусы')]")
+    FILLINGS_SECTION = (By.XPATH, "//h2[contains(text(), 'Начинки')]")
 
-# Конструктор
-CONSTRUCTOR_BUTTON = (By.XPATH, "//a[@href='/constructor']")  # Кнопка «Конструктор»
-LOGO = (By.XPATH, "//a[contains(@class, 'logo')]")  # Логотип Stellar Burgers
-BUNS_TAB = (By.XPATH, "//span[text()='Булки']/parent::button")  # Вкладка «Булки»
-SAUCES_TAB = (By.XPATH, "//span[text()='Соусы']/parent::button")  # Вкладка «Соусы»
-FILLINGS_TAB = (By.XPATH, "//span[text()='Начинки']/parent::button")  # Вкладка «Начинки»
-ACTIVE_TAB = (By.XPATH, "//div[contains(@class, 'tab_tab_type_current')]")  # Активная вкладка
+
+class LoginPageLocators:
+    """Локаторы для страницы входа"""
+    LOGIN_BUTTON = (By.XPATH, "//button[contains(text(), 'Войти')]")
+    EMAIL_INPUT = (By.XPATH, "//input[@name='email']")
+    PASSWORD_INPUT = (By.XPATH, "//input[@name='password']")
+    LOGOUT_BUTTON = (By.XPATH, "//button[contains(text(), 'Выход')]")
+    LOGIN_LINK = (By.XPATH, "//a[contains(text(), 'Войти')]")
+
+
+class RegisterPageLocators:
+    """Локаторы для страницы регистрации"""
+    REGISTER_BUTTON = (By.XPATH, "//button[contains(text(), 'Зарегистрироваться')]")
+    NAME_INPUT = (By.CSS_SELECTOR, "input[name='name']")
+    EMAIL_INPUT = (By.CSS_SELECTOR, "input[name='email']")
+    PASSWORD_INPUT = (By.CSS_SELECTOR, "input[name='password']")
+    LOGIN_LINK = (By.XPATH, "//a[contains(text(), 'Войти')]")
+    ERROR_MESSAGE = (By.XPATH, "//p[contains(@class, 'input__error')]")
+
+
+class ForgotPasswordPageLocators:
+    """Локаторы для страницы восстановления пароля"""
+    RECOVER_BUTTON = (By.XPATH, "//button[contains(text(), 'Восстановить')]")
+    EMAIL_INPUT = (By.CSS_SELECTOR, "input[name='email']")
+    LOGIN_LINK = (By.XPATH, "//a[contains(text(), 'Войти')]")
+
+
+class ProfilePageLocators:
+    """Локаторы для страницы личного кабинета (профиля)"""
+    # Основные элементы
+    PROFILE_NAME = (By.XPATH, "//p[contains(@class, 'text') and contains(text(), 'Имя')]/following-sibling::p")
+    PROFILE_EMAIL = (By.XPATH, "//p[contains(@class, 'text') and contains(text(), 'Email')]/following-sibling::p")
+
+    # Кнопки и ссылки
+    LOGOUT_BUTTON = (By.XPATH, "//button[contains(text(), 'Выход')]")
+    CONSTRUCTOR_BUTTON = (By.XPATH, "//a[contains(text(), 'Конструктор')]")
+    LOGO = (By.XPATH, "//a[contains(@class, 'AppHeader_header__logo')]")
+    ORDER_HISTORY_LINK = (By.XPATH, "//a[contains(text(), 'История заказов')]")
+    PROFILE_LINK = (By.XPATH, "//a[contains(text(), 'Профиль')]")
+
+    # Поля для редактирования профиля
+    NAME_INPUT = (By.XPATH, "//input[@name='name']")
+    EMAIL_INPUT = (By.XPATH, "//input[@name='email']")
+    PASSWORD_INPUT = (By.XPATH, "//input[@name='password']")
+
+    # Кнопки действий
+    SAVE_BUTTON = (By.XPATH, "//button[contains(text(), 'Сохранить')]")
+    CANCEL_BUTTON = (By.XPATH, "//button[contains(text(), 'Отмена')]")
