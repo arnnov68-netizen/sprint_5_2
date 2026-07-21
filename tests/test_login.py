@@ -14,287 +14,199 @@ from urls import Urls
 from helpers import wait_for_element, wait_for_clickable, find_all_inputs
 
 
-def login_user(browser, email, password, expected_url=Urls.MAIN_PAGE):
-    """
-    Вспомогательная функция для входа в аккаунт
-
-    Args:
-        browser: экземпляр браузера
-        email: email пользователя
-        password: пароль пользователя
-        expected_url: ожидаемый URL после входа (по умолчанию главная страница)
-
-    Returns:
-        bool: True если вход выполнен успешно
-    """
-    # Переход на страницу входа, если мы не на ней
-    if browser.current_url != Urls.LOGIN_PAGE:
-        browser.get(Urls.LOGIN_PAGE)
+def login_user(browser, email, password):
+    """Вспомогательная функция для входа в аккаунт"""
+    # Переход на страницу входа
+    browser.get(Urls.LOGIN_PAGE)
 
     # Ждем загрузки страницы
     WebDriverWait(browser, 10).until(
         EC.presence_of_element_located((By.TAG_NAME, "body"))
     )
 
-    # Пробуем найти поля ввода разными способами
-    try:
-        # Способ 1: найти все поля ввода и заполнить по порядку
-        inputs = WebDriverWait(browser, 10).until(
-            EC.presence_of_all_elements_located((By.TAG_NAME, "input"))
-        )
+    # Находим все поля ввода
+    inputs = find_all_inputs(browser)
+    assert len(inputs) >= 2, "Не найдены поля ввода"
 
-        if len(inputs) >= 2:
-            inputs[0].clear()
-            inputs[0].send_keys(email)
+    # Заполняем поля
+    inputs[0].clear()
+    inputs[0].send_keys(email)
+    inputs[1].clear()
+    inputs[1].send_keys(password)
 
-            inputs[1].clear()
-            inputs[1].send_keys(password)
-        else:
-            raise Exception("Не найдено достаточно полей ввода")
-
-    except Exception:
-        try:
-            # Способ 2: найти по атрибуту name
-            email_input = wait_for_element(browser, LoginPageLocators.EMAIL_INPUT)
-            email_input.clear()
-            email_input.send_keys(email)
-
-            password_input = wait_for_element(browser, LoginPageLocators.PASSWORD_INPUT)
-            password_input.clear()
-            password_input.send_keys(password)
-
-        except Exception:
-            try:
-                # Способ 3: найти по placeholder
-                email_input = WebDriverWait(browser, 10).until(
-                    EC.presence_of_element_located((By.XPATH, "//input[@placeholder='Email']"))
-                )
-                email_input.clear()
-                email_input.send_keys(email)
-
-                password_input = WebDriverWait(browser, 10).until(
-                    EC.presence_of_element_located((By.XPATH, "//input[@placeholder='Пароль']"))
-                )
-                password_input.clear()
-                password_input.send_keys(password)
-
-            except Exception:
-                # Способ 4: через JavaScript
-                browser.execute_script(
-                    "document.querySelector('input[type=\"email\"], input[name=\"email\"]').value = arguments[0];",
-                    email
-                )
-                browser.execute_script(
-                    "document.querySelector('input[type=\"password\"]').value = arguments[0];",
-                    password
-                )
-
-    # Находим кнопку входа
-    try:
-        login_button = WebDriverWait(browser, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Войти')]"))
-        )
-    except:
-        login_button = WebDriverWait(browser, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']"))
-        )
-
+    # Нажимаем кнопку входа
+    login_button = wait_for_clickable(browser, LoginPageLocators.LOGIN_BUTTON)
     login_button.click()
 
-    # Ожидание перехода на ожидаемую страницу
+    # Проверяем успешность входа
     try:
         WebDriverWait(browser, 10).until(
-            EC.url_to_be(expected_url)
+            EC.url_to_be(Urls.MAIN_PAGE)
         )
         return True
     except TimeoutException:
         return False
 
 
+def click_login_button_main(browser):
+    """Нажать кнопку 'Войти в аккаунт' на главной странице"""
+    try:
+        # Пробуем основной локатор
+        button = wait_for_clickable(browser, MainPageLocators.LOGIN_BUTTON_MAIN)
+        button.click()
+    except TimeoutException:
+        try:
+            # Пробуем альтернативный локатор
+            button = wait_for_clickable(browser, MainPageLocators.LOGIN_BUTTON_MAIN_ALT)
+            button.click()
+        except TimeoutException:
+            # Пробуем найти кнопку через JavaScript
+            browser.execute_script("""
+                var buttons = document.querySelectorAll('button');
+                for (var i = 0; i < buttons.length; i++) {
+                    if (buttons[i].textContent.includes('Войти в аккаунт') || 
+                        buttons[i].textContent.includes('Войти')) {
+                        buttons[i].click();
+                        break;
+                    }
+                }
+            """)
+
+
 class TestLogin:
 
     def test_login_main_button(self, browser, registered_user):
-        """
-        Проверка входа по кнопке «Войти в аккаунт» на главной странице
-        """
-        # На главной странице нажимаем кнопку "Войти в аккаунт"
-        login_button = wait_for_clickable(browser, MainPageLocators.LOGIN_BUTTON_MAIN)
-        login_button.click()
+        """Проверка входа по кнопке «Войти в аккаунт» на главной странице"""
+        # Нажимаем кнопку "Войти в аккаунт"
+        click_login_button_main(browser)
 
-        # Ожидание загрузки страницы входа
-        WebDriverWait(browser, 10).until(
-            EC.url_to_be(Urls.LOGIN_PAGE)
-        )
+        # Ждем перехода на страницу входа
+        WebDriverWait(browser, 10).until(EC.url_to_be(Urls.LOGIN_PAGE))
 
         # Вход в аккаунт
-        success = login_user(browser, registered_user['email'], registered_user['password'])
-        assert success, "Login failed"
+        login_user(browser, registered_user['email'], registered_user['password'])
 
-        # Проверка, что мы на главной странице
+        # Проверяем переход на главную
+        WebDriverWait(browser, 10).until(EC.url_to_be(Urls.MAIN_PAGE))
         assert browser.current_url == Urls.MAIN_PAGE
 
-        # Проверка, что кнопка "Оформить заказ" отображается
+        # Проверяем наличие кнопки оформления заказа
         place_order_button = wait_for_element(browser, MainPageLocators.PLACE_ORDER_BUTTON)
-        assert place_order_button.is_displayed(), "Place order button is not displayed"
+        assert place_order_button.is_displayed()
 
     def test_login_personal_account_button(self, browser, registered_user):
-        """
-        Проверка входа через кнопку «Личный кабинет»
-        """
-        # Нажимаем кнопку "Личный кабинет" на главной
-        personal_account = wait_for_clickable(browser, MainPageLocators.PERSONAL_ACCOUNT_BUTTON)
+        """Проверка входа через кнопку «Личный кабинет»"""
+        # Нажимаем "Личный кабинет"
+        try:
+            personal_account = wait_for_clickable(browser, MainPageLocators.PERSONAL_ACCOUNT_BUTTON)
+        except TimeoutException:
+            personal_account = wait_for_clickable(browser, MainPageLocators.PERSONAL_ACCOUNT_BUTTON_ALT)
         personal_account.click()
 
-        # Ожидание загрузки страницы входа
-        WebDriverWait(browser, 10).until(
-            EC.url_to_be(Urls.LOGIN_PAGE)
-        )
+        WebDriverWait(browser, 10).until(EC.url_to_be(Urls.LOGIN_PAGE))
 
-        # Вход в аккаунт
-        success = login_user(browser, registered_user['email'], registered_user['password'])
-        assert success, "Login failed"
+        login_user(browser, registered_user['email'], registered_user['password'])
 
-        # Проверка, что мы на главной странице
+        WebDriverWait(browser, 10).until(EC.url_to_be(Urls.MAIN_PAGE))
         assert browser.current_url == Urls.MAIN_PAGE
 
-        # Проверка, что кнопка "Оформить заказ" отображается
         place_order_button = wait_for_element(browser, MainPageLocators.PLACE_ORDER_BUTTON)
-        assert place_order_button.is_displayed(), "Place order button is not displayed"
+        assert place_order_button.is_displayed()
 
     def test_login_register_form_button(self, browser, registered_user):
-        """
-        Проверка входа через кнопку в форме регистрации
-        """
-        # Переход на страницу регистрации
+        """Проверка входа через ссылку в форме регистрации"""
         browser.get(Urls.REGISTER_PAGE)
         wait_for_element(browser, RegisterPageLocators.REGISTER_BUTTON)
 
-        # Нажимаем ссылку "Войти" на странице регистрации
         login_link = wait_for_clickable(browser, RegisterPageLocators.LOGIN_LINK)
         login_link.click()
 
-        # Ожидание загрузки страницы входа
-        WebDriverWait(browser, 10).until(
-            EC.url_to_be(Urls.LOGIN_PAGE)
-        )
+        WebDriverWait(browser, 10).until(EC.url_to_be(Urls.LOGIN_PAGE))
 
-        # Вход в аккаунт
-        success = login_user(browser, registered_user['email'], registered_user['password'])
-        assert success, "Login failed"
+        login_user(browser, registered_user['email'], registered_user['password'])
 
-        # Проверка, что мы на главной странице
+        WebDriverWait(browser, 10).until(EC.url_to_be(Urls.MAIN_PAGE))
         assert browser.current_url == Urls.MAIN_PAGE
 
-        # Проверка, что кнопка "Оформить заказ" отображается
         place_order_button = wait_for_element(browser, MainPageLocators.PLACE_ORDER_BUTTON)
-        assert place_order_button.is_displayed(), "Place order button is not displayed"
+        assert place_order_button.is_displayed()
 
     def test_login_forgot_password_form_button(self, browser, registered_user):
-        """
-        Проверка входа через кнопку в форме восстановления пароля
-        """
-        # Переход на страницу восстановления пароля
+        """Проверка входа через ссылку в форме восстановления пароля"""
         browser.get(Urls.FORGOT_PASSWORD_PAGE)
         wait_for_element(browser, ForgotPasswordPageLocators.RECOVER_BUTTON)
 
-        # Нажимаем ссылку "Войти" на странице восстановления
         login_link = wait_for_clickable(browser, ForgotPasswordPageLocators.LOGIN_LINK)
         login_link.click()
 
-        # Ожидание загрузки страницы входа
-        WebDriverWait(browser, 10).until(
-            EC.url_to_be(Urls.LOGIN_PAGE)
-        )
+        WebDriverWait(browser, 10).until(EC.url_to_be(Urls.LOGIN_PAGE))
 
-        # Вход в аккаунт
-        success = login_user(browser, registered_user['email'], registered_user['password'])
-        assert success, "Login failed"
+        login_user(browser, registered_user['email'], registered_user['password'])
 
-        # Проверка, что мы на главной странице
+        WebDriverWait(browser, 10).until(EC.url_to_be(Urls.MAIN_PAGE))
         assert browser.current_url == Urls.MAIN_PAGE
 
-        # Проверка, что кнопка "Оформить заказ" отображается
         place_order_button = wait_for_element(browser, MainPageLocators.PLACE_ORDER_BUTTON)
-        assert place_order_button.is_displayed(), "Place order button is not displayed"
+        assert place_order_button.is_displayed()
 
     def test_login_invalid_credentials(self, browser):
-        """
-        Проверка входа с неверными данными
-        """
+        """Проверка входа с неверными данными"""
         browser.get(Urls.LOGIN_PAGE)
         wait_for_element(browser, LoginPageLocators.LOGIN_BUTTON)
 
-        # Заполнение полей неверными данными
-        email_input = wait_for_element(browser, LoginPageLocators.EMAIL_INPUT)
-        email_input.clear()
-        email_input.send_keys("invalid@test.com")
-
-        password_input = wait_for_element(browser, LoginPageLocators.PASSWORD_INPUT)
-        password_input.clear()
-        password_input.send_keys("wrongpassword")
+        inputs = find_all_inputs(browser)
+        inputs[0].clear()
+        inputs[0].send_keys("invalid@test.com")
+        inputs[1].clear()
+        inputs[1].send_keys("wrongpassword")
 
         login_button = wait_for_clickable(browser, LoginPageLocators.LOGIN_BUTTON)
         login_button.click()
 
-        # Проверка, что мы остались на странице входа
+        # Остаемся на странице входа
         assert browser.current_url == Urls.LOGIN_PAGE
 
-    @pytest.mark.parametrize("email, password, expected_url", [
-        ("invalid@test.com", "wrongpassword", Urls.LOGIN_PAGE),
-        ("test@test.com", "", Urls.LOGIN_PAGE),
-        ("", "password123", Urls.LOGIN_PAGE),
-        ("", "", Urls.LOGIN_PAGE)
+    @pytest.mark.parametrize("email, password", [
+        ("invalid@test.com", "wrongpassword"),
+        ("test@test.com", ""),
+        ("", "password123"),
+        ("", "")
     ])
-    def test_login_with_invalid_credentials_parametrized(self, browser, email, password, expected_url):
-        """
-        Параметризованный тест для проверки входа с неверными данными
-        """
+    def test_login_with_invalid_credentials_parametrized(self, browser, email, password):
+        """Параметризованный тест входа с неверными данными"""
         browser.get(Urls.LOGIN_PAGE)
         wait_for_element(browser, LoginPageLocators.LOGIN_BUTTON)
 
-        # Заполнение полей
-        email_input = wait_for_element(browser, LoginPageLocators.EMAIL_INPUT)
-        email_input.clear()
-        email_input.send_keys(email)
-
-        password_input = wait_for_element(browser, LoginPageLocators.PASSWORD_INPUT)
-        password_input.clear()
-        password_input.send_keys(password)
+        inputs = find_all_inputs(browser)
+        inputs[0].clear()
+        inputs[0].send_keys(email)
+        inputs[1].clear()
+        inputs[1].send_keys(password)
 
         login_button = wait_for_clickable(browser, LoginPageLocators.LOGIN_BUTTON)
         login_button.click()
 
-        # Проверка, что мы остались на странице входа
-        assert browser.current_url == expected_url, f"Expected URL: {expected_url}, got: {browser.current_url}"
+        assert browser.current_url == Urls.LOGIN_PAGE
 
     def test_login_and_logout(self, browser, registered_user):
-        """
-        Проверка входа и выхода из аккаунта
-        """
-        # Вход в аккаунт
+        """Проверка входа и выхода из аккаунта"""
+        # Вход
         browser.get(Urls.LOGIN_PAGE)
-        success = login_user(browser, registered_user['email'], registered_user['password'])
-        assert success, "Login failed"
+        login_user(browser, registered_user['email'], registered_user['password'])
 
-        # Проверка, что мы на главной странице
+        WebDriverWait(browser, 10).until(EC.url_to_be(Urls.MAIN_PAGE))
         assert browser.current_url == Urls.MAIN_PAGE
 
-        # Переход в личный кабинет
-        personal_account = wait_for_clickable(browser, MainPageLocators.PERSONAL_ACCOUNT_BUTTON)
+        # Переход в профиль
+        try:
+            personal_account = wait_for_clickable(browser, MainPageLocators.PERSONAL_ACCOUNT_BUTTON)
+        except TimeoutException:
+            personal_account = wait_for_clickable(browser, MainPageLocators.PERSONAL_ACCOUNT_BUTTON_ALT)
         personal_account.click()
+        WebDriverWait(browser, 10).until(EC.url_to_be(Urls.PROFILE_PAGE))
 
-        # Ожидание загрузки страницы личного кабинета
-        WebDriverWait(browser, 10).until(
-            EC.url_to_be(Urls.PROFILE_PAGE)
-        )
-        assert browser.current_url == Urls.PROFILE_PAGE
-
-        # Нажимаем кнопку выхода
+        # Выход
         logout_button = wait_for_clickable(browser, ProfilePageLocators.LOGOUT_BUTTON)
         logout_button.click()
-
-        # Ожидание перехода на страницу входа
-        WebDriverWait(browser, 10).until(
-            EC.url_to_be(Urls.LOGIN_PAGE)
-        )
+        WebDriverWait(browser, 10).until(EC.url_to_be(Urls.LOGIN_PAGE))
         assert browser.current_url == Urls.LOGIN_PAGE
