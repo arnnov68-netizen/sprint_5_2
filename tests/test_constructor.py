@@ -17,6 +17,18 @@ class TestConstructor:
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
 
+        # Нажимаем на вкладку "Соусы"
+        sauces_tab = WebDriverWait(browser, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//span[text()='Соусы']"))
+        )
+        sauces_tab.click()
+
+        # Нажимаем на вкладку "Булки"
+        bun_tab = WebDriverWait(browser, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//span[text()='Булки']"))
+        )
+        bun_tab.click()
+
         # Проверяем, что вкладка "Булки" активна
         buns_tab = WebDriverWait(browser, 10).until(
             EC.presence_of_element_located(
